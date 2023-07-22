@@ -12,6 +12,7 @@ public class CameraManager : MonoBehaviour
 
 	[Header("Settings/Transition")]
 	[SerializeField] private float transitionSpeed = 10f;
+	[SerializeField] private float switchCooldown = 3f;
 
 	[Header("Bindings")]
 	[SerializeField] private Transform follow = null;
@@ -22,8 +23,10 @@ public class CameraManager : MonoBehaviour
 	[SerializeField] private World[] worlds = System.Array.Empty<World>();
 
 	private Vector3 offset = Vector3.zero;
+
 	private float transitionHeight = 1f;
 	private Coroutine transitionRoutine = null;
+	private float lastSwitch = 0f;
 	
 	private List<WorldCache> worldCache = new();
 
@@ -43,6 +46,7 @@ public class CameraManager : MonoBehaviour
 
 		//Prepare first world view
 		SetWorld(0);
+		lastSwitch = 0f;
 	}
 
 	/// <summary>
@@ -62,7 +66,15 @@ public class CameraManager : MonoBehaviour
 		if(Input.GetKeyDown(KeyCode.X)
 		&& transitionRoutine == null
 		)
-			transitionRoutine = StartCoroutine(Transition());
+		{
+			float pastTimeSwitch = Time.unscaledTime - lastSwitch;
+			if(pastTimeSwitch > switchCooldown)
+				transitionRoutine = StartCoroutine(Transition());
+			else
+				Debug.Log(
+					$"[CameraManager] Switching worlds too fast! Please wait: {switchCooldown - pastTimeSwitch}s"
+				);
+		}
 	}
 
 	/// <summary>
@@ -154,6 +166,7 @@ public class CameraManager : MonoBehaviour
 		camera.cullingMask = world.cullingMask;
 
 		Debug.Log($"[CameraManager] New world set {index}!");
+		lastSwitch = Time.unscaledTime;
 	}
 
 	[System.Serializable]
